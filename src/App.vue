@@ -124,6 +124,16 @@ import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 import "./app.scss";
 
+import icon from "leaflet/dist/images/marker-icon.png";
+import iconShadow from "leaflet/dist/images/marker-shadow.png";
+
+let DefaultIcon = L.icon({
+  iconUrl: icon,
+  shadowUrl: iconShadow,
+});
+
+L.Marker.prototype.options.icon = DefaultIcon;
+
 import {
   LMap,
   LTileLayer,
@@ -218,9 +228,6 @@ export default {
       const date_lim = new Date(this.date_lim).getTime();
       const season_min = this.doy(this.season_min + "T00:00");
       const season_max = this.doy(this.season_max + "T00:00");
-      console.log(date_lim);
-      console.log(season_min);
-      console.log(season_max);
       return this.obs.filter((o) => {
         return (
           o.obs_ms >= date_lim &&
