@@ -35,9 +35,9 @@ const mapbox_layers = [
       class="w-100"
       style="height: 100%"
       ref="map"
-      @ready="onMapReady"
       :zoom="1"
       :center="[0, 0]"
+      :bounds="map_bounds"
     >
       <l-control position="topleft">
         <b-card>
@@ -114,6 +114,7 @@ export default {
     return {
       obs: [],
       date_lim: "1990-01-01",
+      map_bounds: null,
     };
   },
   methods: {
@@ -132,6 +133,7 @@ export default {
       };
       reader.onload = (e) => {
         this.obs = this.csvToArray(reader.result);
+        this.map_bounds = L.latLngBounds(this.obs.map((o) => L.latLng(o.latitude, o.longitude)));
       };
     },
     csvToArray(str, delimiter = ",") {
