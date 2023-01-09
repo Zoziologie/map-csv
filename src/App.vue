@@ -40,13 +40,19 @@ const mapbox_layers = [
       :center="[0, 0]"
     >
       <l-control position="topleft">
-        <b-form-file
-          size="lg"
-          @change="processFile"
-          accept="csv"
-          no-drop
-          style="min-width: 200px"
-        />
+        <b-card>
+          <b-form-file @change="processFile" accept="csv" no-drop style="min-width: 200px" />
+          <b-form-input type="date" v-model="date_lim" class="mt-2"></b-form-input>
+          <h3 class="mb-0">
+            <a
+              :href="'https://ebird.org/species/' + obs[0].species_code"
+              target="_blank"
+              v-if="obs.length > 0"
+            >
+              {{ obs[0].species_code }}
+            </a>
+          </h3>
+        </b-card>
       </l-control>
 
       <l-control-layers position="topright" />
@@ -60,7 +66,11 @@ const mapbox_layers = [
       />
 
       <l-marker-cluster>
-        <l-marker v-for="o in obs" :key="o.checklist_id" :lat-lng="[o.latitude, o.longitude]">
+        <l-marker
+          v-for="o in obs_filtered"
+          :key="o.checklist_id"
+          :lat-lng="[o.latitude, o.longitude]"
+        >
           <l-popup>
             <b>Date:</b> {{ o.obs_dt }}<br />
             <b>Checklist:</b>
@@ -71,10 +81,6 @@ const mapbox_layers = [
             <b>Count:</b> {{ o.obs_count }}<br />
             <b>Duration:</b> {{ o.effort_hrs }}<br />
             <b>Distance:</b> {{ o.effort_distance_km }}<br />
-            <b>Species:</b>
-            <a :href="'https://ebird.org/species/' + o.species_code" target="_blank">
-              {{ o.species_code }}
-            </a>
             <br />
           </l-popup>
         </l-marker>
@@ -107,6 +113,7 @@ export default {
   data() {
     return {
       obs: [],
+      date_lim: "1990-01-01",
     };
   },
   methods: {
@@ -143,6 +150,13 @@ export default {
           return object;
         }, {});
         return el;
+      });
+    },
+  },
+  computed: {
+    obs_filtered() {
+      return this.obs.filter((o) => {
+        return new Date(o.obs_dt) >= new Date(this.date_lim);
       });
     },
   },
