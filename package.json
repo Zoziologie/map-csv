@@ -1,0 +1,33 @@
+{
+  "name": "map-csv",
+  "homepage": "http://zoziologie.raphaelnussbaumer.com/map-csv/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/zoziologie/map-csv.git"
+  },
+  "title": "Map CSV data",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint --ext .js,.vue --ignore-path .gitignore --fix src"
+  },
+  "dependencies": {
+    "@vitejs/plugin-vue2": "^2.2.0",
+    "bootstrap-vue": "^2.23.1",
+    "leaflet": "^1.9.3",
+    "sass": "^1.57.1",
+    "vite": "^4.0.4",
+    "vue": "^2.7.14",
+    "vue2-leaflet": "^2.7.1"
+  },
+  "devDependencies": {
+    "eslint": "^8.31.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "eslint-plugin-vue": "^9.8.0",
+    "prettier": "^2.8.2"
+  }
+}
