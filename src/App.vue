@@ -31,27 +31,33 @@ const mapbox_layers = [
 
 <template>
   <div class="container-fluid h-100 d-flex p-0">
-    <l-map
-      class="w-100"
-      style="height: 100%"
-      ref="map"
-      :zoom="1"
-      :center="[0, 0]"
-      :bounds="map_bounds"
-    >
+    <l-map class="w-100" style="height: 100%" :bounds="map_bounds">
       <l-control position="topleft">
         <b-card>
+          <h4 class="mb-0"></h4>
           <b-form-file @change="processFile" accept="csv" no-drop style="min-width: 200px" />
-          <b-form-input type="date" v-model="date_lim" class="mt-2"></b-form-input>
-          <h3 class="mb-0">
-            <a
-              :href="'https://ebird.org/species/' + obs[0].species_code"
-              target="_blank"
-              v-if="obs.length > 0"
-            >
-              {{ obs[0].species_code }}
+          <b-form-input lazy type="date" v-model="date_lim" class="mt-2"></b-form-input>
+          <b-input-group>
+            <b-form-input type="date" v-model="season_min" class="mt-2"></b-form-input>
+            <b-form-input type="date" v-model="season_max" class="mt-2"></b-form-input>
+          </b-input-group>
+          <b-form-input lazy type="number" v-model="count_lim" class="mt-2"></b-form-input>
+
+          <div v-if="obs_info">
+            <a :href="'https://ebird.org/species/' + obs_info.species_code" target="_blank">
+              {{ obs_info.species_code }} </a
+            ><br />
+            <b>Date:</b> {{ obs_info.obs_dt }}<br />
+            <b>Checklist:</b>
+            <a :href="'https://ebird.org/checklist/S' + obs_info.checklist_id" target="_blank">
+              {{ obs_info.checklist_id }}
             </a>
-          </h3>
+            <br />
+            <b>Count:</b> {{ obs_info.obs_count }}<br />
+            <b>Duration:</b> {{ obs_info.effort_hrs }}<br />
+            <b>Distance:</b> {{ obs_info.effort_distance_km }}<br />
+            <br />
+          </div>
         </b-card>
       </l-control>
 
@@ -70,19 +76,8 @@ const mapbox_layers = [
           v-for="o in obs_filtered"
           :key="o.checklist_id"
           :lat-lng="[o.latitude, o.longitude]"
+          @click="obs_info = o"
         >
-          <l-popup>
-            <b>Date:</b> {{ o.obs_dt }}<br />
-            <b>Checklist:</b>
-            <a :href="'https://ebird.org/checklist/' + o.checklist_id" target="_blank">
-              {{ o.checklist_id }}
-            </a>
-            <br />
-            <b>Count:</b> {{ o.obs_count }}<br />
-            <b>Duration:</b> {{ o.effort_hrs }}<br />
-            <b>Distance:</b> {{ o.effort_distance_km }}<br />
-            <br />
-          </l-popup>
         </l-marker>
       </l-marker-cluster>
     </l-map>
@@ -114,7 +109,11 @@ export default {
     return {
       obs: [],
       date_lim: "1990-01-01",
+      season_min: "1990-01-05",
+      season_max: "1990-12-31",
+      count_lim: 0,
       map_bounds: null,
+      obs_info: null,
     };
   },
   methods: {
@@ -132,7 +131,11 @@ export default {
         throw new Error(error);
       };
       reader.onload = (e) => {
-        this.obs = this.csvToArray(reader.result);
+        this.obs = this.csvToArray(reader.result).map((o) => {
+          o.obs_dt = new Date(o.obs_dt);
+          o.doy = this.doy(o.obs_dt);
+          return o;
+        });
         this.map_bounds = L.latLngBounds(this.obs.map((o) => L.latLng(o.latitude, o.longitude)));
       };
     },
@@ -154,11 +157,27 @@ export default {
         return el;
       });
     },
+    doy(date) {
+      var start = new Date(date.getFullYear(), 0, 0);
+      var diff = date - start;
+      var oneDay = 1000 * 60 * 60 * 24;
+      return Math.floor(diff / oneDay);
+    },
   },
   computed: {
     obs_filtered() {
+      const date_lim = new Date(this.date_lim);
+      const season_min = this.doy(new Date(this.season_min));
+
+      const season_max = this.doy(new Date(this.season_max));
+      console.log(season_max);
       return this.obs.filter((o) => {
-        return new Date(o.obs_dt) >= new Date(this.date_lim);
+        return (
+          o.obs_dt >= date_lim &&
+          o.obs_count > this.count_lim &&
+          o.doy >= season_min &&
+          o.doy <= season_max
+        );
       });
     },
   },
