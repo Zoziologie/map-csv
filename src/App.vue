@@ -39,12 +39,14 @@ const mapbox_layers = [
       :zoom="1"
       :center="[0, 0]"
     >
-      <l-control position="topright">
-        <div class="d-flex flex-column" style="max-width: 480px">
-          <b-form-group label="Upload the exported file">
-            <b-form-file size="lg" @change="processFile" accept="csv" no-drop />
-          </b-form-group>
-        </div>
+      <l-control position="topleft">
+        <b-form-file
+          size="lg"
+          @change="processFile"
+          accept="csv"
+          no-drop
+          style="min-width: 200px"
+        />
       </l-control>
 
       <l-control-layers position="topright" />
@@ -56,6 +58,11 @@ const mapbox_layers = [
         :url="`https://api.mapbox.com/styles/v1/mapbox/${l.value}/tiles/{z}/{x}/{y}?access_token=${mapbox_access_token}`"
         layer-type="base"
       />
+
+      <l-marker-cluster>
+        <l-marker v-for="o in obs" :key="o.checklist_id" :lat-lng="[o.latitude, o.longitude]">
+        </l-marker>
+      </l-marker-cluster>
     </l-map>
   </div>
 </template>
@@ -64,8 +71,11 @@ const mapbox_layers = [
 import "./app.scss";
 import "leaflet/dist/leaflet.css";
 import "leaflet";
+import "leaflet.markercluster/dist/MarkerCluster.css";
+import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
 import { LMap, LTileLayer, LControlLayers, LControl, LPopup, LMarker, LIcon } from "vue2-leaflet";
+import Vue2LeafletMarkerCluster from "vue2-leaflet-markercluster";
 
 export default {
   components: {
@@ -76,6 +86,7 @@ export default {
     LPopup,
     LMarker,
     LIcon,
+    "l-marker-cluster": Vue2LeafletMarkerCluster,
   },
   data() {
     return {
