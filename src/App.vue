@@ -32,27 +32,45 @@ const mapbox_layers = [
 <template>
   <div class="container-fluid h-100 d-flex flex-column">
     <div class="row flex-grow-1">
-      <div class="col-md-2 vh-100 d-flex flex-column">
-        <div>
-          <h3 class="mt-2">Map CSV</h3>
-          <b-form-file @change="processFile" accept="csv" no-drop />
-          <b-card class="mt-2 w-100" title="Filter" v-if="obs.length > 0">
-            <b-input-group label="Since:" class="mt-2">
-              <b-form-input lazy type="date" v-model="date_lim"></b-form-input>
-            </b-input-group>
-            <b-input-group label="Between day of year:" class="mt-2">
-              <b-form-input type="date" v-model="season_min" class="hide-year"></b-form-input>
-              <b-form-input type="date" v-model="season_max" class="hide-year"></b-form-input>
-            </b-input-group>
-            <b-form-group label="Max count:" class="mt-2">
-              <b-form-input lazy type="number" v-model="count_lim"></b-form-input>
+      <div class="col-md-2 vh-100 d-flex flex-column overflow-auto">
+        <h3 class="mt-2">Map CSV</h3>
+        <b-form-file @change="processFile" accept="csv" no-drop />
+        <b-card class="mt-2 w-100" v-if="obs.length > 0" no-body>
+          <b-card-body class="p-3">
+            <b-form-group>
+              <b-form-input lazy type="date" v-model="date_lim" debounce="1000"></b-form-input>
             </b-form-group>
-          </b-card>
-          <b-card class="mt-2" title="Observation info" v-if="obs_info">
-            <a :href="'https://ebird.org/species/' + obs_info.species_code" target="_blank">
+            <b-input-group label="Between day of year:" class="mt-2">
+              <b-form-input
+                type="date"
+                v-model="season_min"
+                class="hide-year"
+                debounce="1000"
+              ></b-form-input>
+              <b-form-input
+                type="date"
+                v-model="season_max"
+                class="hide-year"
+                debounce="1000"
+              ></b-form-input>
+            </b-input-group>
+            <b-form-group class="mt-2 mb-0">
+              <b-form-input type="number" v-model="count_lim" debounce="1000"></b-form-input>
+            </b-form-group>
+          </b-card-body>
+        </b-card>
+        <b-card class="mt-2" v-if="obs_info" no-body>
+          <b-card-body class="p-3">
+            <b>Species:</b
+            ><a :href="'https://ebird.org/species/' + obs_info.species_code" target="_blank">
               {{ obs_info.species_code.toLocaleString() }} </a
             ><br />
-            <b>Date:</b> {{ obs_info.obs_dt }}<br />
+            <b>Date:</b>
+            {{
+              new Date(obs_info.obs_dt).toLocaleDateString() +
+              " " +
+              new Date(obs_info.obs_dt).toLocaleTimeString().substring(0, 5)
+            }}<br />
             <b>Checklist:</b>
             <a :href="'https://ebird.org/checklist/S' + obs_info.checklist_id" target="_blank">
               {{ obs_info.checklist_id }}
@@ -60,10 +78,9 @@ const mapbox_layers = [
             <br />
             <b>Count:</b> {{ obs_info.obs_count }}<br />
             <b>Duration:</b> {{ obs_info.effort_hrs }}<br />
-            <b>Distance:</b> {{ obs_info.effort_distance_km }}<br />
-            <br />
-          </b-card>
-        </div>
+            <b>Distance:</b> {{ obs_info.effort_distance_km }}
+          </b-card-body>
+        </b-card>
       </div>
       <div class="col flex-grow-1 px-0">
         <l-map
@@ -135,8 +152,8 @@ export default {
     return {
       obs: [],
       date_lim: "1990-01-01",
-      season_min: "1990-01-05",
-      season_max: "1990-12-31",
+      season_min: "2020-01-01",
+      season_max: "2020-12-31",
       count_lim: 0,
       map_bounds: null,
       obs_info: null,
@@ -158,8 +175,9 @@ export default {
       };
       reader.onload = (e) => {
         this.obs = this.csvToArray(reader.result).map((o) => {
-          o.obs_dt = new Date(o.obs_dt);
           o.doy = this.doy(o.obs_dt);
+          o.obs_ms = new Date(o.obs_dt).getTime();
+          o.obs_count = parseInt(o.obs_count);
           return o;
         });
         this.map_bounds = L.latLngBounds(this.obs.map((o) => L.latLng(o.latitude, o.longitude)));
@@ -184,20 +202,28 @@ export default {
       });
     },
     doy(date) {
-      var start = new Date(date.getFullYear(), 0, 0);
-      var diff = date - start;
-      var oneDay = 1000 * 60 * 60 * 24;
-      return Math.floor(diff / oneDay);
+      date = new Date(date);
+      return (
+        (Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()) -
+          Date.UTC(date.getFullYear(), 0, 0)) /
+        24 /
+        60 /
+        60 /
+        1000
+      );
     },
   },
   computed: {
     obs_filtered() {
-      const date_lim = new Date(this.date_lim);
-      const season_min = this.doy(new Date(this.season_min));
-      const season_max = this.doy(new Date(this.season_max));
+      const date_lim = new Date(this.date_lim).getTime();
+      const season_min = this.doy(this.season_min + "T00:00");
+      const season_max = this.doy(this.season_max + "T00:00");
+      console.log(date_lim);
+      console.log(season_min);
+      console.log(season_max);
       return this.obs.filter((o) => {
         return (
-          o.obs_dt >= date_lim &&
+          o.obs_ms >= date_lim &&
           o.obs_count > this.count_lim &&
           o.doy >= season_min &&
           o.doy <= season_max
