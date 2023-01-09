@@ -39,8 +39,12 @@ const mapbox_layers = [
       :zoom="1"
       :center="[0, 0]"
     >
-      <l-control position="bottomright">
-        <div class="d-flex flex-column" style="max-width: 480px">Test</div>
+      <l-control position="topright">
+        <div class="d-flex flex-column" style="max-width: 480px">
+          <b-form-group label="Upload the exported file">
+            <b-form-file size="lg" @change="processFile" accept="csv" no-drop />
+          </b-form-group>
+        </div>
       </l-control>
 
       <l-control-layers position="topright" />
@@ -75,13 +79,44 @@ export default {
   },
   data() {
     return {
-      map: null,
+      obs: [],
     };
   },
   methods: {
     async onMapReady() {
       await this.$nextTick();
       this.map = this.$refs.map.mapObject;
+    },
+    processFile(event) {
+      this.loading_file_status = 0;
+      const file = event.target.files[0];
+
+      const reader = new FileReader();
+      reader.readAsText(file);
+      reader.onerror = (error) => {
+        throw new Error(error);
+      };
+      reader.onload = (e) => {
+        this.obs = this.csvToArray(reader.result);
+      };
+    },
+    csvToArray(str, delimiter = ",") {
+      const headers = str
+        .slice(0, str.indexOf("\n"))
+        .split(delimiter)
+        .map((x) => x.replaceAll('"', ""));
+      const rows = str
+        .slice(str.indexOf("\n") + 1)
+        .split("\n")
+        .filter((row) => row.length > 0);
+      return rows.map(function (row) {
+        const values = row.split(delimiter).map((x) => x.replaceAll('"', ""));
+        const el = headers.reduce(function (object, header, index) {
+          object[header] = values[index];
+          return object;
+        }, {});
+        return el;
+      });
     },
   },
   mounted() {},
