@@ -31,7 +31,13 @@ const mapbox_layers = [
 
 <template>
   <div class="container-fluid h-100 d-flex p-0">
-    <l-map class="w-100" style="height: 100%" :bounds="map_bounds">
+    <l-map
+      class="w-100"
+      style="height: 100%"
+      :bounds="map_bounds"
+      :options="{ zoomControl: false }"
+    >
+      <l-control-zoom position="bottomright"></l-control-zoom>
       <l-control position="topleft">
         <b-card>
           <h4 class="mb-0"></h4>
@@ -91,7 +97,16 @@ import "leaflet";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-import { LMap, LTileLayer, LControlLayers, LControl, LPopup, LMarker, LIcon } from "vue2-leaflet";
+import {
+  LMap,
+  LTileLayer,
+  LControlLayers,
+  LControl,
+  LPopup,
+  LMarker,
+  LIcon,
+  LControlZoom,
+} from "vue2-leaflet";
 import Vue2LeafletMarkerCluster from "vue2-leaflet-markercluster";
 
 export default {
@@ -103,6 +118,7 @@ export default {
     LPopup,
     LMarker,
     LIcon,
+    LControlZoom,
     "l-marker-cluster": Vue2LeafletMarkerCluster,
   },
   data() {
