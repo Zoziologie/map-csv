@@ -1,6 +1,15 @@
 @import "node_modules/bootstrap/scss/bootstrap";
+@import "node_modules/bootstrap-vue/src/index.scss";
 
 html,
 body {
   height: 100%;
+}
+
+.hide-year::-webkit-datetime-edit-year-field {
+  background: #fff;
+  color: transparent;
+  margin-left: -5px;
+  position: absolute;
+  width: 4px;
 }

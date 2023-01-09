@@ -30,28 +30,27 @@ const mapbox_layers = [
 </script>
 
 <template>
-  <div class="container-fluid h-100 d-flex p-0">
-    <l-map
-      class="w-100"
-      style="height: 100%"
-      :bounds="map_bounds"
-      :options="{ zoomControl: false }"
-    >
-      <l-control-zoom position="bottomright"></l-control-zoom>
-      <l-control position="topleft">
-        <b-card>
-          <h4 class="mb-0"></h4>
-          <b-form-file @change="processFile" accept="csv" no-drop style="min-width: 200px" />
-          <b-form-input lazy type="date" v-model="date_lim" class="mt-2"></b-form-input>
-          <b-input-group>
-            <b-form-input type="date" v-model="season_min" class="mt-2"></b-form-input>
-            <b-form-input type="date" v-model="season_max" class="mt-2"></b-form-input>
-          </b-input-group>
-          <b-form-input lazy type="number" v-model="count_lim" class="mt-2"></b-form-input>
-
-          <div v-if="obs_info">
+  <div class="container-fluid h-100 d-flex flex-column">
+    <div class="row flex-grow-1">
+      <div class="col-md-2 vh-100 d-flex flex-column">
+        <div>
+          <h3 class="mt-2">Map CSV</h3>
+          <b-form-file @change="processFile" accept="csv" no-drop />
+          <b-card class="mt-2 w-100" title="Filter" v-if="obs.length > 0">
+            <b-input-group label="Since:" class="mt-2">
+              <b-form-input lazy type="date" v-model="date_lim"></b-form-input>
+            </b-input-group>
+            <b-input-group label="Between day of year:" class="mt-2">
+              <b-form-input type="date" v-model="season_min" class="hide-year"></b-form-input>
+              <b-form-input type="date" v-model="season_max" class="hide-year"></b-form-input>
+            </b-input-group>
+            <b-form-group label="Max count:" class="mt-2">
+              <b-form-input lazy type="number" v-model="count_lim"></b-form-input>
+            </b-form-group>
+          </b-card>
+          <b-card class="mt-2" title="Observation info" v-if="obs_info">
             <a :href="'https://ebird.org/species/' + obs_info.species_code" target="_blank">
-              {{ obs_info.species_code }} </a
+              {{ obs_info.species_code.toLocaleString() }} </a
             ><br />
             <b>Date:</b> {{ obs_info.obs_dt }}<br />
             <b>Checklist:</b>
@@ -63,39 +62,50 @@ const mapbox_layers = [
             <b>Duration:</b> {{ obs_info.effort_hrs }}<br />
             <b>Distance:</b> {{ obs_info.effort_distance_km }}<br />
             <br />
-          </div>
-        </b-card>
-      </l-control>
-
-      <l-control-layers position="topright" />
-      <l-tile-layer
-        v-for="(l, id) in mapbox_layers"
-        :key="l.text"
-        :name="l.text"
-        :visible="id == 1"
-        :url="`https://api.mapbox.com/styles/v1/mapbox/${l.value}/tiles/{z}/{x}/{y}?access_token=${mapbox_access_token}`"
-        layer-type="base"
-      />
-
-      <l-marker-cluster>
-        <l-marker
-          v-for="o in obs_filtered"
-          :key="o.checklist_id"
-          :lat-lng="[o.latitude, o.longitude]"
-          @click="obs_info = o"
+          </b-card>
+        </div>
+      </div>
+      <div class="col flex-grow-1 px-0">
+        <l-map
+          class="w-100"
+          style="height: 100%"
+          :bounds="map_bounds"
+          :options="{ zoomControl: false }"
         >
-        </l-marker>
-      </l-marker-cluster>
-    </l-map>
+          <l-control-zoom position="bottomright"></l-control-zoom>
+          <l-control position="topleft"> </l-control>
+
+          <l-control-layers position="topright" />
+          <l-tile-layer
+            v-for="(l, id) in mapbox_layers"
+            :key="l.text"
+            :name="l.text"
+            :visible="id == 1"
+            :url="`https://api.mapbox.com/styles/v1/mapbox/${l.value}/tiles/{z}/{x}/{y}?access_token=${mapbox_access_token}`"
+            layer-type="base"
+          />
+
+          <l-marker-cluster>
+            <l-marker
+              v-for="o in obs_filtered"
+              :key="o.checklist_id"
+              :lat-lng="[o.latitude, o.longitude]"
+              @click="obs_info = o"
+            >
+            </l-marker>
+          </l-marker-cluster>
+        </l-map>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
-import "./app.scss";
 import "leaflet/dist/leaflet.css";
 import "leaflet";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
+import "./app.scss";
 
 import {
   LMap,
@@ -184,9 +194,7 @@ export default {
     obs_filtered() {
       const date_lim = new Date(this.date_lim);
       const season_min = this.doy(new Date(this.season_min));
-
       const season_max = this.doy(new Date(this.season_max));
-      console.log(season_max);
       return this.obs.filter((o) => {
         return (
           o.obs_dt >= date_lim &&
