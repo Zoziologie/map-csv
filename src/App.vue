@@ -61,6 +61,22 @@ const mapbox_layers = [
 
       <l-marker-cluster>
         <l-marker v-for="o in obs" :key="o.checklist_id" :lat-lng="[o.latitude, o.longitude]">
+          <l-popup>
+            <b>Date:</b> {{ o.obs_dt }}<br />
+            <b>Checklist:</b>
+            <a :href="'https://ebird.org/checklist/' + o.checklist_id" target="_blank">
+              {{ o.checklist_id }}
+            </a>
+            <br />
+            <b>Count:</b> {{ o.obs_count }}<br />
+            <b>Duration:</b> {{ o.effort_hrs }}<br />
+            <b>Distance:</b> {{ o.effort_distance_km }}<br />
+            <b>Species:</b>
+            <a :href="'https://ebird.org/species/' + o.species_code" target="_blank">
+              {{ o.species_code }}
+            </a>
+            <br />
+          </l-popup>
         </l-marker>
       </l-marker-cluster>
     </l-map>
